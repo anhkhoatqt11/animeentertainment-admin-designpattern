@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+type AnimeepisodesComments {
+  content String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  likes   Json?
+  replies AnimeepisodesCommentsReplies[]
+  userId  String                         @db.ObjectId
+}
+
+type AnimeepisodesCommentsReplies {
+  content String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  likes   Json?
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  replies Json?
+  userId  String @db.ObjectId
+}
+
+type BannersList {
+  bannerImage String
+  urlId       String @db.ObjectId
+}
+
+type ComicchaptersComments {
+  content String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  likes   Json?
+  replies ComicchaptersCommentsReplies[]
+  userId  String                         @db.ObjectId
+}
+
+type ComicchaptersCommentsReplies {
+  content String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  likes   Json?
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  replies Json?
+  userId  String @db.ObjectId
+}
+
+type QuestionsAnswers {
+  content String
+  id      Int?
+}
+
+type UsersAuthentication {
+  password     String
+  salt         String
+  sessionToken String
+}
+
+type UsersBookmarkList {
+  comic  String[]
+  movies String[]
+}
+
+type UsersChallenges {
+  date  DateTime @db.Date
+  point Int
+  time  Int
+}
+
+type UsersHistories {
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  readingComic  Json?
+  watchingMovie UsersHistoriesWatchingMovie[]
+}
+
+type UsersHistoriesWatchingMovie {
+  episodeId String @db.ObjectId
+  position  Int
+}
+
+model animealbums {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  albumName String
+  animeList String[]
+}
+
+model animeepisodes {
+  id          String                  @id @default(auto()) @map("_id") @db.ObjectId
+  v           Int?                    @map("__v")
+  advertisementId          String                  @db.ObjectId
+  comments    AnimeepisodesComments[]
+  content     String
+  coverImage  String
+  episodeName String
+  likes       String[]
+  publicTime  DateTime                @db.Date
+  totalTime   Int
+  views       Int
+}
+
+model animes {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  ageFor         String
+  coverImage     String
+  description    String
+  episodes       String[]
+  genres         String[]
+  landspaceImage String
+  movieName      String
+  publishTime    String
+  publisher      String
+}
+
+model avatars {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  avatarList     String[]
+  collectionName String
+}
+
+model banners {
+  id   String        @id @default(auto()) @map("_id") @db.ObjectId
+  list BannersList[]
+  type String
+}
+
+model comicalbums {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  albumName String
+  comicList String[]
+}
+
+model comicchapters {
+  id           String                  @id @default(auto()) @map("_id") @db.ObjectId
+  chapterName  String
+  comments     ComicchaptersComments[]
+  content      String[]
+  coverImage   String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  likes        Json?
+  publicTime   DateTime                @db.Date
+  unlockPrice  Int
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  userUnlocked Json?
+  views        Int
+}
+
+model comics {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  ageFor         String
+  artist         String
+  author         String
+  chapterList    String[]
+  comicName      String
+  coverImage     String
+  description    String
+  genres         String[]
+  landspaceImage String
+  newChapterTime String
+  publisher      String
+}
+
+model donatepackages {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  coin          Int
+  coverImage    String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  donateRecords Json?
+  subTitle      String
+  title         String
+}
+
+model genres {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  genreName String
+}
+
+model questions {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  answers         QuestionsAnswers[]
+  correctAnswerID Int
+  mediaUrl        String
+  questionName    String
+}
+
+model users {
+  id               String               @id @default(auto()) @map("_id") @db.ObjectId
+  v                Int?                 @map("__v")
+  authentication   UsersAuthentication?
+  avatar           String
+  bookmarkList     UsersBookmarkList
+  challenges       UsersChallenges[]
+  coinPoint        Int
+  histories        UsersHistories
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  paymentHistories Json?
+  phone            String?
+  userName         String?
+  username         String?
+}
