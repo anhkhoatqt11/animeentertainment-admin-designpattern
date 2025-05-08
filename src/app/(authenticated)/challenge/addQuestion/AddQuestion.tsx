@@ -5,7 +5,6 @@ import Loader from "@/components/Loader";
 import { FileDialog } from "@/components/ui/FileDialog";
 import { Label } from "@/components/ui/label";
 import { useChallenge } from "@/hooks/useChallenge";
-import { postRequest } from "@/lib/fetch";
 import {
   Button,
   Input,
@@ -19,34 +18,31 @@ import {
 import { generateReactHelpers } from "@uploadthing/react/hooks";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { QuestionBuilder } from "../builders/QuestionBuilder";
+import { QuestionFacade } from "../facades/QuestionFacade";
+
 const { useUploadThing } = generateReactHelpers<OurFileRouter>();
 
-type Question = {
-  _id: string;
-  questionName: string;
-  answers: string[];
-  correctAnswerID: number;
-  mediaUrl: string;
-};
-
 export function AddQuestion({}) {
+  // State hooks
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isLoading, setIsLoading] = useState(false);
   const [questionImage, setQuestionImage] = React.useState([]);
   const [questionName, setQuestionName] = React.useState("");
-  const [answers, setAnswers] = useState(
-    ["", "", "", ""].map((content) => content)
-  );
+  const [answers, setAnswers] = useState(["", "", "", ""]);
   const [correctAnswerID, setCorrectAnswerID] = React.useState(0);
   const [defaultQuestionImage, setDefaultQuestionImage] = React.useState("");
   const [actionType, setActionType] = React.useState(1);
+  
+  // Custom hooks
   const { addQuestion } = useChallenge();
-  const route = useRouter();
-
+  const router = useRouter();
   const { startUpload } = useUploadThing("imageUploader");
+  
+  // Create facade instance
+  const questionFacade = new QuestionFacade(startUpload, addQuestion, router);
 
   const handleAnswerChange = (index, value) => {
     const updatedAnswers = [...answers];
@@ -54,51 +50,39 @@ export function AddQuestion({}) {
     setAnswers(updatedAnswers);
   };
 
-  var questionMediaImage = "";
   const onSubmit = async () => {
-    if (questionImage.length === 0) {
-      toast.error("Câu hỏi bắt buộc phải có ảnh minh họa");
+    // Build the question object using the builder pattern
+    const questionBuilder = new QuestionBuilder()
+      .setQuestionName(questionName)
+      .setAnswers(answers)
+      .setCorrectAnswerID(correctAnswerID);
+
+    // Validate before proceeding
+    if (!questionFacade.validateQuestion(questionBuilder.build(), questionImage.length > 0)) {
       return;
     }
-    if (questionName === "") {
-      toast.error("Vui lòng nhập câu hỏi");
-      return;
-    }
-    if (answers.filter((i) => i === "").length > 0) {
-      toast.error("Vui lòng nhập đầy đủ câu trả lời");
-      return;
-    }
+
     setIsLoading(true);
-    if (questionImage.length > 0) {
-      const [questionImg] = await Promise.all([
-        startUpload([...questionImage]).then((res) => {
-          const formattedImages = res?.map((image) => ({
-            id: image.key,
-            name: image.key.split("_")[1] ?? image.key,
-            url: image.url,
-          }));
-          return formattedImages ?? null;
-        }),
-      ]);
-      questionMediaImage = questionImg ? questionImg[0]?.url : "";
+    
+    try {
+      // Upload image
+      const questionMediaImage = await questionFacade.uploadImage(questionImage);
+      
+      // Complete the question object with the media URL
+      const question = questionBuilder
+        .setMediaUrl(questionMediaImage !== "" ? questionMediaImage : defaultQuestionImage)
+        .build();
+      
+      // Add the question
+      await questionFacade.addNewQuestion(question);
+      
+      setIsLoading(false);
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi thêm câu hỏi");
+      setIsLoading(false);
     }
-    proccessAdding(questionMediaImage);
   };
 
-  const proccessAdding = async (questionMediaImage) => {
-    const data = {
-      questionName: questionName,
-      answers: answers,
-      correctAnswerID: correctAnswerID,
-      mediaUrl:
-        questionMediaImage != "" ? questionMediaImage : defaultQuestionImage,
-    };
-    await addQuestion(data).then((res) => {
-      toast.success("Thêm câu hỏi thành công");
-      setIsLoading(false);
-      route.push("/challenge");
-    });
-  };
   const handleSetCorrectAnswer = (index) => {
     setCorrectAnswerID(index);
   };
@@ -109,6 +93,7 @@ export function AddQuestion({}) {
       behavior: "smooth",
     });
   };
+
   return (
     <>
       <Toaster />
@@ -208,7 +193,7 @@ export function AddQuestion({}) {
                       placeholder={`Nhập câu trả lời ${index + 1}`}
                       onChange={(e) =>
                         handleAnswerChange(index, e.target.value)
-                      } // Update here
+                      }
                       endContent={
                         <>
                           {correctAnswerID === index && (
