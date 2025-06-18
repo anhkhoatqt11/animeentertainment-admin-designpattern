@@ -1,0 +1,84 @@
+@startuml MementoPatternSequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #0066CC
+skinparam sequenceLifeLineBorderColor #333333
+
+title Memento Pattern - Draft Save/Load Sequence
+
+actor User
+participant "AddNewAnime\nComponent" as Component
+participant "useDraftManager\nHook" as Hook
+participant "AnimeFormOriginator" as Originator
+participant "AnimeFormCaretaker" as Caretaker
+participant "AnimeFormMemento" as Memento
+database localStorage
+
+== Draft Save Flow ==
+User -> Component : Fill form data
+Component -> Hook : updateFormState()
+Hook -> Originator : setState()
+Originator -> Originator : Update currentState
+
+User -> Component : Click "Save Draft"
+Component -> Hook : saveDraft(name)
+Hook -> Originator : createMemento()
+Originator -> Memento : new AnimeFormMemento(state)
+Memento --> Originator : memento instance
+Originator --> Hook : memento
+Hook -> Caretaker : saveMemento(key, memento)
+Caretaker -> localStorage : setItem()
+localStorage --> Caretaker : success
+Caretaker --> Hook : key
+Hook --> Component : draftKey
+Component -> User : Show success message
+
+== Auto-Save Flow ==
+loop Every 30 seconds
+    Hook -> Hook : Auto-save timer
+    Hook -> Originator : hasSignificantChanges()
+    Originator --> Hook : true/false
+    alt if has changes
+        Hook -> Hook : saveDraft("auto_save")
+        note over Hook : Same save flow as above
+    end
+end
+
+== Draft Load Flow ==
+User -> Component : Click "Manage Drafts"
+Component -> Hook : getAllDrafts()
+Hook -> Caretaker : getAllDrafts()
+Caretaker --> Hook : draft list
+Hook --> Component : drafts
+Component -> User : Show draft list
+
+User -> Component : Select draft to load
+Component -> Hook : loadDraft(key)
+Hook -> Caretaker : getMemento(key)
+Caretaker --> Hook : memento
+Hook -> Originator : restoreFromMemento(memento)
+Originator -> Memento : getState()
+Memento --> Originator : state
+Originator -> Originator : Update currentState
+Hook -> Component : restoreState(setters)
+Component -> Component : Update form fields
+Component -> User : Form restored with draft data
+
+== Error Recovery Flow ==
+Component -> Hook : getAllDrafts()
+Hook -> Caretaker : getAllDrafts()
+Caretaker -> localStorage : getItem()
+localStorage --> Caretaker : corrupted data
+Caretaker -> Caretaker : Parse error
+Caretaker -> localStorage : removeItem()
+Caretaker --> Hook : empty array
+Hook --> Component : no drafts
+Component -> User : Clean state
+
+== Data Persistence Flow ==
+Caretaker -> localStorage : saveToStorage()
+note over localStorage : Store as JSON array
+localStorage -> Caretaker : loadFromStorage()
+note over Caretaker : Validate and restore mementos
+
+@enduml

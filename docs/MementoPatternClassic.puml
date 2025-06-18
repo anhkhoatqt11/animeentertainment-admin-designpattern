@@ -1,0 +1,115 @@
+@startuml MementoPatternClassic
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #333333
+skinparam arrowColor #0066CC
+
+title Classic Memento Pattern Implementation
+
+package "Memento Pattern Core" {
+    
+    class AnimeFormMemento <<Memento>> {
+        - state: AnimeFormState
+        --
+        + constructor(state: AnimeFormState)
+        + getState(): AnimeFormState
+        + getTimestamp(): number
+        + getPageName(): string
+        --
+        **Responsibilities:**
+        • Store state snapshot
+        • Provide read-only access
+        • Maintain immutability
+    }
+
+    class AnimeFormOriginator <<Originator>> {
+        - currentState: AnimeFormState
+        --
+        + constructor()
+        - getDefaultState(): AnimeFormState
+        + setState(state: Partial<AnimeFormState>): void
+        + getState(): AnimeFormState
+        + createMemento(): AnimeFormMemento
+        + restoreFromMemento(memento: AnimeFormMemento): void
+        + hasSignificantChanges(): boolean
+        --
+        **Responsibilities:**
+        • Create memento snapshots
+        • Restore from mementos
+        • Manage internal state
+    }
+
+    class AnimeFormCaretaker <<Caretaker>> {
+        - mementos: Map<string, AnimeFormMemento>
+        - maxMementos: number
+        - storageKey: string
+        --
+        + saveMemento(key: string, memento: AnimeFormMemento): void
+        + getMemento(key: string): AnimeFormMemento | null
+        + getAllDrafts(): Array<{key: string, memento: AnimeFormMemento}>
+        + deleteDraft(key: string): boolean
+        + clearAllDrafts(): void
+        - cleanup(): void
+        - saveToStorage(): void
+        - loadFromStorage(): void
+        + generateDraftKey(movieName: string): string
+        --
+        **Responsibilities:**
+        • Store mementos collection
+        • Manage memento lifecycle
+        • Handle persistence
+        • Provide memento operations
+    }
+}
+
+interface AnimeFormState <<State>> {
+    landspaceImage: any[]
+    coverImage: any[]
+    movieName: string
+    description: string
+    genreSelected: any[]
+    publisher: string
+    weeklyTime: string
+    ageFor: any
+    episodeList: any[]
+    timestamp: number
+    pageName: string
+}
+
+' Core Pattern Relationships
+AnimeFormOriginator --> AnimeFormMemento : creates >
+AnimeFormCaretaker --> AnimeFormMemento : stores/retrieves >
+AnimeFormMemento --> AnimeFormState : encapsulates >
+
+' Pattern flow arrows
+AnimeFormOriginator ..> AnimeFormCaretaker : requests memento storage
+AnimeFormCaretaker ..> AnimeFormOriginator : provides stored mementos
+
+note as PatternNote
+**Memento Pattern Benefits:**
+• Preserves encapsulation boundaries
+• Simplifies originator implementation
+• Supports unlimited undo operations
+• State management is externalized
+
+**Implementation Features:**
+• Persistent storage via localStorage
+• Auto-cleanup of old mementos
+• JSON serialization support
+• Error recovery mechanisms
+end note
+
+note as UsageNote
+**Usage Flow:**
+1. Originator creates memento
+2. Caretaker stores memento
+3. Later: Caretaker retrieves memento
+4. Originator restores from memento
+
+**Key Constraint:**
+Only Originator can read memento state
+Caretaker treats mementos as opaque
+end note
+
+@enduml

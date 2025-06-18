@@ -19,6 +19,10 @@ import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { useAnimeEpisodes } from "@/hooks/useAnimeEpisodes";
 import { useAnimes } from "@/hooks/useAnimes";
 import Loader from "@/components/Loader";
+import { useDraftManager } from "@/hooks/useDraftManager";
+import { DraftManager } from "@/components/DraftManager";
+import { FileText, Save, Clock } from "lucide-react";
+import draftSystemUtils from "@/lib/utils/draftSystemUtils";
 const { useUploadThing } = generateReactHelpers<OurFileRouter>();
 
 type AnimeEp = {
@@ -32,22 +36,103 @@ type AnimeEp = {
 
 export function AddNewAnime() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen: isDraftOpen, onOpen: onDraftOpen, onOpenChange: onDraftOpenChange } = useDisclosure();
   const [isLoading, setIsLoading] = useState(false);
-  const [landspaceImage, setLandspaceImage] = React.useState([]);
-  const [coverImage, setCoverImage] = React.useState([]);
+  const [landspaceImage, setLandspaceImage] = React.useState<any[]>([]);
+  const [coverImage, setCoverImage] = React.useState<any[]>([]);
   const [movieName, setMovieName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [genreSelected, setGenreSelected] = React.useState([]);
+  const [genreSelected, setGenreSelected] = React.useState<any[]>([]);
   const [publisher, setPublisher] = React.useState("");
   const [weeklyTime, setWeeklyTime] = React.useState("");
-  const [ageFor, setAgeFor] = React.useState(new Set([]));
+  const [ageFor, setAgeFor] = React.useState<any>(new Set([]));
   const [episodeList, setEpisodeList] = useState<AnimeEp[]>([]);
-  const [episodeIdList, setEpisodeIdList] = useState([]);
+  const [episodeIdList, setEpisodeIdList] = useState<string[]>([]);
   const { startUpload } = useUploadThing("imageUploader");
   const { createNewEpisode } = useAnimeEpisodes();
   const { createNewAnime } = useAnimes();
   const route = useRouter();
+  // Draft Management
+  const draftManager = useDraftManager();
+  // Clear corrupted data on component mount
+  useEffect(() => {
+    try {
+      // Validate and repair draft system
+      if (!draftSystemUtils.validateDraftData()) {
+        console.log('🔧 Repairing draft system...');
+        draftSystemUtils.repairDraftSystem();
+      }
+      
+      // Test if draft manager is working properly
+      draftManager.getAllDrafts();
+    } catch (error) {
+      console.error('Draft manager error on mount:', error);
+      console.log('🚨 Performing emergency reset...');
+      draftSystemUtils.emergencyReset();
+      
+      // Reload the page to start fresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  }, []);
 
+  // Auto-save functionality
+  useEffect(() => {
+    draftManager.enableAutoSave(30000); // Auto-save every 30 seconds
+    return () => {
+      draftManager.disableAutoSave();
+    };
+  }, []);
+
+  // Update draft state when form data changes
+  useEffect(() => {
+    draftManager.updateFormState({
+      landspaceImage,
+      coverImage,
+      movieName,
+      description,
+      genreSelected,
+      publisher,
+      weeklyTime,
+      ageFor,
+      episodeList,
+      timestamp: Date.now(),
+      pageName: "addNewAnime"
+    });
+  }, [landspaceImage, coverImage, movieName, description, genreSelected, publisher, weeklyTime, ageFor, episodeList]);
+
+  // Warn user before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (draftManager.hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  const handleLoadDraft = (key: string) => {
+    draftManager.loadDraft(key);
+    draftManager.restoreState({
+      setLandspaceImage,
+      setCoverImage,
+      setMovieName,
+      setDescription,
+      setGenreSelected,
+      setPublisher,
+      setWeeklyTime,
+      setAgeFor,
+      setEpisodeList,
+    });
+  };
+
+  const handleSaveDraft = (name?: string) => {
+    return draftManager.saveDraft(name);
+  };
   const onSubmit = async () => {
     if (landspaceImage.length <= 0 || coverImage.length <= 0) {
       toast.error("Phim bắt buộc phải có một ảnh bìa ngang và một ảnh bìa dọc");
@@ -61,7 +146,8 @@ export function AddNewAnime() {
       toast.error("Phải có tối thiểu 1 thể loại phim và tối đa 3 thể loại");
       return;
     }
-    if (ageFor.currentKey === "") {
+    const ageForValue = ageFor?.currentKey || (ageFor.size > 0 ? Array.from(ageFor)[0] : "");
+    if (!ageForValue) {
       toast.error("Vui lòng chọn độ tuổi phù hợp");
       return;
     }
@@ -87,6 +173,9 @@ export function AddNewAnime() {
         return formattedImages ?? null;
       }),
     ]);
+    
+    const newEpisodeIdList: string[] = [];
+    
     episodeList.map((item, index) => {
       const data = {
         coverImage: item.coverImage,
@@ -100,41 +189,47 @@ export function AddNewAnime() {
         views: 0,
       };
       createNewEpisode(data).then((res) => {
-        episodeIdList.push(res?._id);
+        if (res?.data?._id) {
+          newEpisodeIdList.push(res.data._id);
+        }
         if (index === episodeList.length - 1) {
-          const data = {
+          const animeData = {
             coverImage: posterImage ? posterImage[0]?.url : "",
             landspaceImage: landspacePoster ? landspacePoster[0]?.url : "",
             movieName: movieName,
             genres: genreSelected,
             publishTime: weeklyTime,
-            ageFor: ageFor.currentKey,
+            ageFor: ageForValue,
             publisher: publisher,
             description: description,
-            episodes: episodeIdList,
+            episodes: newEpisodeIdList,
           };
-          createNewAnime(data).then((res) => {
+          createNewAnime(animeData).then((res) => {
             toast.success("Đã thêm bộ phim mới thành công");
             setIsLoading(false);
+            // Clear draft after successful submission
+            draftManager.clearAllDrafts();
           });
         }
       });
     });
     if (episodeList.length === 0) {
-      const data = {
+      const animeData = {
         coverImage: posterImage ? posterImage[0]?.url : "",
         landspaceImage: landspacePoster ? landspacePoster[0]?.url : "",
         movieName: movieName,
         genres: genreSelected,
         publishTime: weeklyTime,
-        ageFor: ageFor.currentKey || "10+",
+        ageFor: ageForValue || "10+",
         publisher: publisher,
         description: description,
         episodes: [],
       };
-      createNewAnime(data).then((res) => {
+      createNewAnime(animeData).then((res) => {
         toast.success("Đã thêm bộ phim mới thành công");
         setIsLoading(false);
+        // Clear draft after successful submission
+        draftManager.clearAllDrafts();
       });
     }
   };
@@ -145,7 +240,6 @@ export function AddNewAnime() {
       behavior: "smooth",
     });
   };
-
   return (
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -177,7 +271,52 @@ export function AddNewAnime() {
           )}
         </ModalContent>
       </Modal>
+
+      <DraftManager
+        isOpen={isDraftOpen}
+        onClose={onDraftOpenChange}
+        drafts={draftManager.getAllDrafts()}
+        onLoadDraft={handleLoadDraft}
+        onDeleteDraft={draftManager.deleteDraft}
+        onSaveDraft={handleSaveDraft}
+        onClearAllDrafts={draftManager.clearAllDrafts}
+        hasUnsavedChanges={draftManager.hasUnsavedChanges()}
+      />
+
       <div className="relative min-h-[1032px]">
+        {/* Draft Management Toolbar */}
+        <div className="mb-4 flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Thêm phim mới</h2>
+            {draftManager.hasUnsavedChanges() && (
+              <div className="flex items-center gap-2 text-amber-600">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">Có thay đổi chưa lưu</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="flat"
+              startContent={<Save className="w-4 h-4" />}
+              onClick={() => {
+                handleSaveDraft();
+                toast.success('Đã lưu bản thảo');
+              }}
+            >
+              Lưu bản thảo
+            </Button>
+            <Button
+              variant="flat"
+              startContent={<FileText className="w-4 h-4" />}
+              onClick={onDraftOpen}
+            >
+              Quản lý bản thảo ({draftManager.getAllDrafts().length})
+            </Button>
+          </div>
+        </div>
+
         <AnimeInformation
           props={{
             landspaceImage,

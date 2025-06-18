@@ -1,0 +1,120 @@
+classDiagram
+    class AnimeFormMemento {
+        -state: AnimeFormState
+        +constructor(state: AnimeFormState)
+        +getState(): AnimeFormState
+        +getTimestamp(): number
+        +getPageName(): string
+    }
+
+    class AnimeFormOriginator {
+        -currentState: AnimeFormState
+        +constructor()
+        -getDefaultState(): AnimeFormState
+        +setState(state: Partial~AnimeFormState~): void
+        +getState(): AnimeFormState
+        +createMemento(): AnimeFormMemento
+        +restoreFromMemento(memento: AnimeFormMemento): void
+        +hasSignificantChanges(): boolean
+    }
+
+    class AnimeFormCaretaker {
+        -mementos: Map~string, AnimeFormMemento~
+        -maxMementos: number
+        -storageKey: string
+        +constructor()
+        +saveMemento(key: string, memento: AnimeFormMemento): void
+        +getMemento(key: string): AnimeFormMemento | null
+        +getAllDrafts(): Array~object~
+        +deleteDraft(key: string): boolean
+        +clearAllDrafts(): void
+        -cleanup(): void
+        -saveToStorage(): void
+        -loadFromStorage(): void
+        +generateDraftKey(movieName: string): string
+    }
+
+    class useDraftManager {
+        +saveDraft(name?: string): string
+        +loadDraft(key: string): void
+        +deleteDraft(key: string): void
+        +clearAllDrafts(): void
+        +enableAutoSave(interval?: number): void
+        +disableAutoSave(): void
+        +getAllDrafts(): Array~object~
+        +hasUnsavedChanges(): boolean
+        +updateFormState(state: Partial~AnimeFormState~): void
+        +getCurrentState(): AnimeFormState
+        +restoreState(setters: FormSetters): void
+    }
+
+    class DraftManager {
+        +props: DraftManagerProps
+        -formatDate(timestamp: number): string
+        -getDraftPreview(memento: AnimeFormMemento): object
+        -handleSaveDraft(): void
+        -handleLoadDraft(key: string): void
+        -handleDeleteDraft(key: string): void
+        -handleClearAll(): void
+        +render(): JSX.Element
+    }
+
+    class AddNewAnime {
+        -state: FormState
+        -draftManager: useDraftManager
+        +onSubmit(): void
+        +handleLoadDraft(key: string): void
+        +handleSaveDraft(name?: string): string
+        +render(): JSX.Element
+    }
+
+    class AnimeFormState {
+        <<interface>>
+        +landspaceImage: any[]
+        +coverImage: any[]
+        +movieName: string
+        +description: string
+        +genreSelected: any[]
+        +publisher: string
+        +weeklyTime: string
+        +ageFor: any
+        +episodeList: any[]
+        +timestamp: number
+        +pageName: string
+    }
+
+    class FormSetters {
+        <<interface>>
+        +setLandspaceImage(value: any[]): void
+        +setCoverImage(value: any[]): void
+        +setMovieName(value: string): void
+        +setDescription(value: string): void
+        +setGenreSelected(value: any[]): void
+        +setPublisher(value: string): void
+        +setWeeklyTime(value: string): void
+        +setAgeFor(value: any): void
+        +setEpisodeList(value: any[]): void
+    }
+
+    class draftSystemUtils {
+        +clearAllDraftData(): void
+        +validateDraftData(): boolean
+        +repairDraftSystem(): void
+        +getDraftSystemInfo(): object
+        +emergencyReset(): void
+    }
+
+    class localStorage {
+        <<database>>
+    }
+
+    AnimeFormOriginator --> AnimeFormMemento
+    AnimeFormCaretaker --> AnimeFormMemento
+    AnimeFormCaretaker --> localStorage
+    useDraftManager --> AnimeFormOriginator
+    useDraftManager --> AnimeFormCaretaker
+    AddNewAnime --> useDraftManager
+    DraftManager --> useDraftManager
+    AnimeFormMemento --> AnimeFormState
+    useDraftManager --> FormSetters
+    draftSystemUtils --> localStorage

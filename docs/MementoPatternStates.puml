@@ -1,0 +1,78 @@
+@startuml MementoPatternStates
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam stateBackgroundColor #F8F9FA
+skinparam stateBorderColor #333333
+
+title Draft Lifecycle State Machine
+
+[*] --> EmptyForm : Component Mount
+
+state EmptyForm {
+    EmptyForm : No form data
+    EmptyForm : No drafts saved
+}
+
+state FormWithData {
+    FormWithData : User input present
+    FormWithData : Unsaved changes
+}
+
+state DraftSaved {
+    DraftSaved : Memento created
+    DraftSaved : Stored in localStorage
+    DraftSaved : No unsaved changes
+}
+
+state AutoSaving {
+    AutoSaving : Timer triggered
+    AutoSaving : Creating auto-draft
+}
+
+state LoadingDraft {
+    LoadingDraft : Restoring from memento
+    LoadingDraft : Updating form state
+}
+
+state ErrorState {
+    ErrorState : Corrupted data detected
+    ErrorState : System repair needed
+}
+
+EmptyForm --> FormWithData : User types
+FormWithData --> DraftSaved : Manual save
+FormWithData --> AutoSaving : 30s timer
+AutoSaving --> DraftSaved : Auto-save complete
+DraftSaved --> FormWithData : User continues editing
+DraftSaved --> LoadingDraft : User loads draft
+LoadingDraft --> FormWithData : Draft loaded
+FormWithData --> [*] : Form submitted
+DraftSaved --> [*] : Form submitted
+
+EmptyForm --> ErrorState : Corrupted data on mount
+FormWithData --> ErrorState : Storage error
+ErrorState --> EmptyForm : System repaired
+ErrorState --> [*] : Emergency reset
+
+note right of AutoSaving
+Auto-save creates drafts with
+"auto_save" prefix to distinguish
+from manual saves
+end note
+
+note right of ErrorState
+Error recovery includes:
+• Data validation
+• Corrupted data cleanup
+• System repair utilities
+• Emergency reset option
+end note
+
+note bottom of DraftSaved
+Multiple drafts can exist:
+• User-named drafts
+• Auto-saved drafts
+• Maximum 10 drafts (auto-cleanup)
+end note
+
+@enduml
