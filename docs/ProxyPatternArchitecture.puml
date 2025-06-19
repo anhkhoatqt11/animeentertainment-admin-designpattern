@@ -1,0 +1,149 @@
+@startuml ProxyPatternArchitecture
+!theme vibrant
+
+title Proxy Design Pattern - System Architecture Overview
+
+package "Frontend Application" {
+    
+    package "UI Layer" {
+        component [AnimeList] as AL
+        component [AnimeItemCard] as AIC
+        component [ProxyImage] as PI
+        component [ProxyPatternDemo] as PPD
+    }
+    
+    package "Hooks Layer" {
+        component [useImageProxy] as UIP
+        component [useAnimes] as UA
+        component [useQuery] as UQ
+    }
+    
+    package "Proxy Pattern Implementation" {
+        
+        package "Core Pattern" {
+            interface ImageInterface as II
+            class RealImage as RI
+            class ImageProxy as IP
+        }
+        
+        package "Cache Management" {
+            component [ImageCacheManager] as ICM
+            database "Static Cache\nMap<url, RealImage>" as Cache
+        }
+        
+        package "React Integration" {
+            component [ProxyImage Component] as PIC
+            component [useImageProxy Hook] as UIPH
+        }
+    }
+    
+    package "Utilities" {
+        component [Intersection Observer] as IO
+        component [Error Handling] as EH
+        component [Loading States] as LS
+    }
+}
+
+package "External Services" {
+    component [Image URLs] as ImageUrls
+    component [API Endpoints] as API
+    component [Browser Cache] as BC
+}
+
+' UI Layer Connections
+AL --> AIC : renders multiple
+AIC --> PI : uses for image display
+PPD --> PI : demonstrates pattern
+PPD --> ICM : shows cache management
+
+' Hooks Layer Connections
+AL --> UA : fetches anime data
+AL --> UQ : manages data state
+PI --> UIP : manages image state
+UIP --> IP : creates proxy instances
+
+' Core Pattern Connections
+IP ..|> II : implements
+RI ..|> II : implements
+IP --> RI : lazy creates
+IP --> Cache : stores/retrieves
+
+' Cache Management Connections
+ICM --> IP : manages instances
+ICM --> Cache : statistics & control
+UIPH --> IP : uses proxy
+
+' React Integration
+PIC --> UIPH : uses hook
+PI --> IO : lazy loading
+PI --> EH : error boundaries
+PI --> LS : loading states
+
+' External Connections
+RI --> ImageUrls : loads from
+RI --> BC : browser optimization
+AL --> API : fetches data
+
+' Data Flow
+ImageUrls ..> RI : network request
+Cache ..> IP : instant retrieval
+IP ..> UIP : state management
+UIP ..> PI : render control
+
+note right of IP
+    **Proxy Features:**
+    • Lazy initialization
+    • Caching mechanism
+    • Access control
+    • Performance optimization
+    
+    **Cache Strategy:**
+    • Static shared cache
+    • Memory efficient
+    • Persistent across renders
+    • Size management ready
+end note
+
+note left of RI
+    **Real Subject:**
+    • Actual image loading
+    • Browser Image API
+    • Promise-based async
+    • Error handling
+    
+    **Loading Process:**
+    • Network request
+    • Browser validation
+    • Memory allocation
+    • Event handling
+end note
+
+note bottom of ICM
+    **Cache Manager:**
+    • Preloading strategies
+    • Predictive caching
+    • Cache statistics
+    • Memory management
+    
+    **Operations:**
+    • preloadPageImages()
+    • preloadNextPageImages()
+    • clearCache()
+    • getCacheStats()
+end note
+
+note top of PI
+    **React Component:**
+    • Intersection Observer
+    • Loading placeholders
+    • Error boundaries
+    • Fallback images
+    
+    **Features:**
+    • Lazy loading
+    • Progressive enhancement
+    • Accessibility support
+    • Performance monitoring
+end note
+
+@enduml

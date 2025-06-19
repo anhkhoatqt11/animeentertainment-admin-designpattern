@@ -1,0 +1,118 @@
+@startuml ProxyPatternStates
+!theme reddress-lightblue
+
+title Proxy Design Pattern - Image Loading States
+
+state "Initialization" as init {
+    state "Component Mount" as mount
+    state "Props Received" as props
+    state "Proxy Creation" as proxy_create
+    
+    [*] --> mount
+    mount --> props : receive image URL
+    props --> proxy_create : lazy initialization
+}
+
+state "Cache Operations" as cache_ops {
+    state "Cache Check" as check
+    state "Cache Hit" as hit
+    state "Cache Miss" as miss
+    state "Cache Store" as store
+    
+    check --> hit : found in cache
+    check --> miss : not in cache
+    miss --> store : after loading
+    store --> hit : future requests
+}
+
+state "Loading Process" as loading {
+    state "Intersection Check" as intersection
+    state "In Viewport" as in_view
+    state "Loading Started" as loading_start
+    state "Image Creating" as img_create
+    state "Network Request" as network
+    state "Load Complete" as complete
+    state "Error Occurred" as error
+    
+    intersection --> in_view : enters viewport
+    in_view --> loading_start : trigger load
+    loading_start --> img_create : create Image()
+    img_create --> network : set src
+    network --> complete : onload event
+    network --> error : onerror event
+}
+
+state "Display States" as display {
+    state "Placeholder" as placeholder
+    state "Loading Spinner" as spinner
+    state "Image Rendered" as rendered
+    state "Error Display" as error_display
+    state "Retry Available" as retry
+    
+    placeholder --> spinner : loading starts
+    spinner --> rendered : load success
+    spinner --> error_display : load failure
+    error_display --> retry : user action
+    retry --> spinner : retry attempt
+}
+
+state "Cache Management" as management {
+    state "Preloading" as preload
+    state "Predictive Cache" as predict
+    state "Cache Statistics" as stats
+    state "Cache Cleanup" as cleanup
+    
+    preload --> stats : update metrics
+    predict --> preload : next page images
+    stats --> cleanup : if needed
+}
+
+' State Transitions
+[*] --> init
+init --> cache_ops : proxy created
+cache_ops --> loading : if cache miss
+cache_ops --> display : if cache hit
+loading --> display : load complete/error
+display --> management : background operations
+management --> cache_ops : cache updated
+
+' Notes for each state group
+note right of init
+    **Lazy Initialization:**
+    • Create proxy only when needed
+    • Component lifecycle aware
+    • Memory efficient startup
+end note
+
+note left of cache_ops
+    **Caching Strategy:**
+    • Check cache first
+    • Instant return if cached
+    • Store after successful load
+end note
+
+note bottom of loading
+    **Progressive Loading:**
+    • Intersection Observer
+    • Async image loading
+    • Error handling
+    • Promise-based
+end note
+
+note top of display
+    **User Experience:**
+    • Loading feedback
+    • Error recovery
+    • Smooth transitions
+    • Accessibility support
+end note
+
+note right of management
+    **Performance:**
+    • Background preloading
+    • Predictive caching
+    • Memory monitoring
+    • Statistics tracking
+end note
+
+@enduml

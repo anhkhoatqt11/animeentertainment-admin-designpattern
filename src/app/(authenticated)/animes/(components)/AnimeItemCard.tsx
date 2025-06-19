@@ -3,17 +3,21 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { AspectRatio } from "@radix-ui/react-aspect-ratio";
 import { formatNumberWithDots } from "@/lib/utils";
+import { ProxyImage } from "@/components/ProxyImage";
 
 export default function AnimeItemCard({ item }) {
   return (
     <div className="flex flex-col overflow-hidden group shadow-lg bg-transparent rounded-lg border border-gray-50">
-      <Link href={`animes/${item?._id}`}>
-        <div className="group relative overflow-hidden">
+      <Link href={`animes/${item?._id}`}>        <div className="group relative overflow-hidden">
           <AspectRatio ratio={16 / 9}>
-            <img
+            <ProxyImage
               src={item.landspaceImage}
               alt={item.movieName}
               className="object-cover h-full w-full transition-transform group-hover:scale-125 duration-300"
+              lazy={true}
+              fallbackSrc="/placeholder.svg"
+              onLoad={() => console.log(`[AnimeItemCard] Image loaded for: ${item.movieName}`)}
+              onError={(error) => console.error(`[AnimeItemCard] Image error for ${item.movieName}:`, error)}
             />
           </AspectRatio>
           <div className="px-2 absolute inset-0 z-20 flex items-end bg-gradient-to-t from-[#25253bdc] to-[#20202b00]">

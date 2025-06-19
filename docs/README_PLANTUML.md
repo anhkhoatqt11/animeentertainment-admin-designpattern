@@ -1,53 +1,74 @@
-# PlantUML Documentation - Memento Design Pattern
+# PlantUML Documentation - Proxy Design Pattern
 
-This directory contains PlantUML diagrams that visualize the Memento design pattern implementation for the anime form draft system.
+This directory contains PlantUML diagrams that visualize the Proxy design pattern implementation for image caching and lazy loading in the AnimeList component.
 
 ## 📊 Diagram Files
 
-### 1. MementoPatternStructure.puml
-**Complete system overview showing all classes and their relationships**
+### 1. ProxyPatternClassDiagram.puml
+**Complete class structure showing all classes and their relationships**
 
-- **Purpose**: High-level architecture view
-- **Shows**: All classes, interfaces, utilities, and external dependencies
-- **Use case**: Understanding the complete system structure
+- **Purpose**: Shows the class structure and relationships of the Proxy Pattern implementation
+- **Shows**: All classes, interfaces, React components, and cache management
+- **Use case**: Understanding the complete system class structure
 - **Key elements**:
-  - Core pattern classes (Memento, Originator, Caretaker)
-  - React integration layer (hooks, components)
-  - Data types and utilities
-  - Storage layer integration
+  - `ImageInterface`: The subject interface defining the contract
+  - `RealImage`: The real subject that handles actual image loading
+  - `ImageProxy`: The proxy that provides caching and lazy initialization
+  - `ImageCacheManager`: Utility class for cache management
+  - React components integration (`ProxyImage`, `AnimeList`, `AnimeItemCard`)
 
-### 2. MementoPatternClassic.puml
-**Pure Memento pattern implementation following Gang of Four design**
+### 2. ProxyPatternSequenceDiagram.puml
+**Interaction flow and timing of image loading operations**
 
-- **Purpose**: Focus on the core design pattern
-- **Shows**: Classic pattern structure without React specifics
-- **Use case**: Understanding the fundamental pattern implementation
-- **Key elements**:
-  - Memento class (state storage)
-  - Originator class (state management)
-  - Caretaker class (memento management)
-  - Pattern responsibilities and benefits
-
-### 3. MementoPatternSequence.puml
-**Interaction flow and timing of operations**
-
-- **Purpose**: Show how operations flow through the system
-- **Shows**: Step-by-step process flows
+- **Purpose**: Illustrates the sequence of operations during image loading and caching
+- **Shows**: Step-by-step process flows for different scenarios
 - **Use case**: Understanding system behavior and timing
 - **Key flows**:
-  - Draft save sequence
-  - Auto-save mechanism
-  - Draft load sequence
-  - Error recovery process
+  - Page Load & Preloading: How images are preloaded when the page loads
+  - Lazy Loading on Scroll: Image loading triggered by viewport intersection
+  - Predictive Caching: Background loading of next page images
 
-### 4. MementoPatternComponents.puml
-**React component architecture and integration**
+### 3. ProxyPatternComponentStructure.puml
+**React component architecture and integration layers**
 
-- **Purpose**: Show how pattern integrates with React
-- **Shows**: Component hierarchy and data flow
+- **Purpose**: Displays the React component architecture and integration layers
+- **Shows**: Component hierarchy, hooks, and package organization
 - **Use case**: Understanding React-specific implementation
 - **Key elements**:
-  - UI components
+  - Core Pattern: Basic proxy pattern classes
+  - React Integration: Hooks and components
+  - Cache Management: High-level cache operations
+  - Application Components: Specific UI components
+
+### 4. ProxyPatternCacheFlow.puml
+**State diagram showing cache operations and flow control**
+
+- **Purpose**: Shows cache operations and state transitions
+- **Shows**: Cache hit/miss scenarios, lazy initialization, error handling
+- **Use case**: Understanding caching strategy and performance benefits
+- **Key states**:
+  - Image request initiation
+  - Cache hit/miss scenarios
+  - Lazy initialization process
+  - Error handling and fallback
+  - Cache storage operations
+
+### 5. ProxyPatternArchitecture.puml
+**High-level system architecture overview**
+
+- **Purpose**: Complete system architecture showing all layers and interactions
+- **Shows**: UI layers, hooks, pattern implementation, utilities, external services
+- **Use case**: Understanding overall system design and integration points
+- **Architecture layers**:
+  - UI Layer: React components for display
+  - Hooks Layer: State management and data fetching
+  - Proxy Pattern Implementation: Core pattern classes
+  - Cache Management: Caching strategies and utilities
+  - React Integration: Component and hook integration
+  - Utilities: Supporting services (Intersection Observer, Error Handling)
+
+### 6. ProxyPatternStates.puml
+**Detailed state machine showing all possible states during image loading lifecycle**
   - Custom hooks
   - Business logic layer
   - Storage integration
