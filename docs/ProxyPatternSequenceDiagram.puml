@@ -1,0 +1,105 @@
+@startuml ProxyPatternSequenceDiagram
+!theme amiga
+
+title Proxy Design Pattern - Image Loading Sequence
+
+actor User
+participant AnimeList
+participant ImageCacheManager
+participant ProxyImage
+participant useImageProxy
+participant ImageProxy
+participant RealImage
+participant Cache
+
+== Page Load & Preloading ==
+
+User -> AnimeList: visits page
+activate AnimeList
+
+AnimeList -> ImageCacheManager: preloadPageImages(animeData)
+activate ImageCacheManager
+
+loop for each image URL
+    ImageCacheManager -> ImageProxy: new ImageProxy(url)
+    activate ImageProxy
+    
+    ImageProxy -> Cache: check if cached
+    alt Image not in cache
+        ImageProxy -> RealImage: new RealImage(url)
+        activate RealImage
+        RealImage -> RealImage: load image element
+        RealImage --> ImageProxy: loaded URL
+        deactivate RealImage
+        ImageProxy -> Cache: store(url, realImage)
+    else Image in cache
+        Cache --> ImageProxy: return cached image
+    end
+    
+    ImageProxy --> ImageCacheManager: loaded
+    deactivate ImageProxy
+end
+
+ImageCacheManager --> AnimeList: preloading complete
+deactivate ImageCacheManager
+
+== Lazy Loading on Scroll ==
+
+User -> ProxyImage: scrolls into viewport
+activate ProxyImage
+
+ProxyImage -> useImageProxy: loadImage()
+activate useImageProxy
+
+useImageProxy -> ImageProxy: load()
+activate ImageProxy
+
+ImageProxy -> Cache: check cache
+alt Image cached
+    Cache --> ImageProxy: return cached URL
+    ImageProxy --> useImageProxy: instant load
+else Image not cached
+    ImageProxy -> RealImage: create & load
+    activate RealImage
+    RealImage -> RealImage: async image loading
+    RealImage --> ImageProxy: Promise<url>
+    deactivate RealImage
+    ImageProxy -> Cache: store loaded image
+    ImageProxy --> useImageProxy: loaded URL
+end
+
+deactivate ImageProxy
+
+useImageProxy --> ProxyImage: image ready
+deactivate useImageProxy
+
+ProxyImage -> ProxyImage: render image
+ProxyImage --> User: display image
+deactivate ProxyImage
+
+== Predictive Caching ==
+
+AnimeList -> ImageCacheManager: preloadNextPageImages()
+activate ImageCacheManager
+
+ImageCacheManager -> AnimeList: fetchAllAnimes(nextPage)
+AnimeList --> ImageCacheManager: next page data
+
+loop for each next page image
+    ImageCacheManager -> ImageProxy: preload image
+    activate ImageProxy
+    ImageProxy -> RealImage: background load
+    activate RealImage
+    RealImage --> ImageProxy: loaded
+    deactivate RealImage
+    ImageProxy -> Cache: cache for future use
+    ImageProxy --> ImageCacheManager: cached
+    deactivate ImageProxy
+end
+
+ImageCacheManager --> AnimeList: next page preloaded
+deactivate ImageCacheManager
+
+deactivate AnimeList
+
+@enduml

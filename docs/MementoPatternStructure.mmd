@@ -1,0 +1,54 @@
+classDiagram
+    class AnimeFormMemento {
+        -state: AnimeFormState
+        +constructor(state: AnimeFormState)
+        +getState(): AnimeFormState
+        +getTimestamp(): number
+        +getPageName(): string
+    }
+
+    class AnimeFormOriginator {
+        -currentState: AnimeFormState
+        +constructor()
+        -getDefaultState(): AnimeFormState
+        +setState(state: Partial~AnimeFormState~): void
+        +getState(): AnimeFormState
+        +createMemento(): AnimeFormMemento
+        +restoreFromMemento(memento: AnimeFormMemento): void
+        +hasSignificantChanges(): boolean
+    }
+
+    class AnimeFormCaretaker {
+        -mementos: Map~string, AnimeFormMemento~
+        -maxMementos: number
+        -storageKey: string
+        +constructor()
+        +saveMemento(key: string, memento: AnimeFormMemento): void
+        +getMemento(key: string): AnimeFormMemento | null
+        +getAllDrafts(): Array~object~
+        +deleteDraft(key: string): boolean
+        +clearAllDrafts(): void
+        -cleanup(): void
+        -saveToStorage(): void
+        -loadFromStorage(): void
+        +generateDraftKey(movieName: string): string
+    }
+
+    class AnimeFormState {
+        <<interface>>
+        +landspaceImage: any[]
+        +coverImage: any[]
+        +movieName: string
+        +description: string
+        +genreSelected: any[]
+        +publisher: string
+        +weeklyTime: string
+        +ageFor: any
+        +episodeList: any[]
+        +timestamp: number
+        +pageName: string
+    }
+
+    AnimeFormOriginator --> AnimeFormMemento
+    AnimeFormCaretaker --> AnimeFormMemento
+    AnimeFormMemento --> AnimeFormState

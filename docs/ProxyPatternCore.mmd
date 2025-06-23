@@ -1,0 +1,46 @@
+classDiagram
+    class ImageInterface {
+        <<interface>>
+        +display(): void
+        +getUrl(): string
+        +isLoaded(): boolean
+    }
+
+    class RealImage {
+        -url: string
+        -isLoaded: boolean
+        -image: HTMLImageElement
+        +constructor(url: string)
+        +display(): void
+        +getUrl(): string
+        +isLoaded(): boolean
+        -loadImage(): Promise~void~
+    }
+
+    class ImageProxy {
+        -url: string
+        -realImage: RealImage | null
+        -cache: Map~string, RealImage~
+        +constructor(url: string)
+        +display(): void
+        +getUrl(): string
+        +isLoaded(): boolean
+        -createRealImage(): RealImage
+        -getCachedImage(): RealImage | null
+    }
+
+    ImageProxy ..|> ImageInterface : implements
+    RealImage ..|> ImageInterface : implements
+    ImageProxy --> RealImage : creates lazily
+    ImageProxy --> ImageCache : uses
+
+    class ImageCache {
+        -cache: Map~string, RealImage~
+        -maxSize: number
+        +getInstance(): ImageCache
+        +get(url: string): RealImage | null
+        +set(url: string, image: RealImage): void
+        +has(url: string): boolean
+        +clear(): void
+        +size(): number
+    }

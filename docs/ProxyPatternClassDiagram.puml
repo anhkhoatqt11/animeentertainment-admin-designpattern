@@ -1,0 +1,104 @@
+@startuml ProxyPatternClassDiagram
+!define RECTANGLE class
+
+title Proxy Design Pattern - Image Caching Class Diagram
+
+interface ImageInterface {
+    +load(): Promise<string>
+    +getUrl(): string
+    +isLoaded(): boolean
+}
+
+class RealImage implements ImageInterface {
+    -url: string
+    -loaded: boolean
+    -loadPromise: Promise<string>
+    
+    +constructor(url: string)
+    +load(): Promise<string>
+    +getUrl(): string
+    +isLoaded(): boolean
+    -createImageElement(): void
+}
+
+class ImageProxy implements ImageInterface {
+    -realImage: RealImage
+    -url: string
+    -static cache: Map<string, RealImage>
+    
+    +constructor(url: string)
+    +load(): Promise<string>
+    +getUrl(): string
+    +isLoaded(): boolean
+    +static clearCache(): void
+    +static getCacheSize(): number
+    +static removeFromCache(url: string): boolean
+}
+
+class ImageCacheManager {
+    +static preloadImages(urls: string[]): Promise<void>
+    +static getCacheStats(): CacheStats
+    +static clearCache(): void
+    +static removeFromCache(urls: string[]): void
+    +static preloadPageImages(items: any[]): Promise<void>
+    +static preloadNextPageImages(fetchFunction, currentPage): Promise<void>
+}
+
+class ProxyImage {
+    -props: ProxyImageProps
+    +render(): JSX.Element
+    -handleRetry(): void
+    -useIntersectionObserver(): void
+}
+
+class AnimeList {
+    -currentPage: number
+    -imageLoadingStats: object
+    +onPageChange(page: number): void
+    +preloadImages(): void
+    +render(): JSX.Element
+}
+
+class AnimeItemCard {
+    -item: AnimeItem
+    +render(): JSX.Element
+}
+
+' Relationships
+ImageProxy --> RealImage : creates when needed
+ImageProxy --> ImageInterface : implements
+RealImage --> ImageInterface : implements
+ImageCacheManager --> ImageProxy : uses static methods
+ProxyImage --> ImageProxy : uses via hook
+AnimeList --> ImageCacheManager : preloads images
+AnimeList --> AnimeItemCard : renders
+AnimeItemCard --> ProxyImage : uses for image display
+
+' Cache relationship
+ImageProxy::cache --> RealImage : stores instances
+
+note right of ImageProxy
+    **Proxy Pattern Features:**
+    • Lazy initialization
+    • Caching mechanism
+    • Access control
+    • Performance optimization
+end note
+
+note left of RealImage
+    **Real Subject:**
+    • Actual image loading
+    • Promise-based async loading
+    • Error handling
+    • Load state tracking
+end note
+
+note bottom of ImageCacheManager
+    **Cache Management:**
+    • Preloading strategies
+    • Cache statistics
+    • Memory management
+    • Performance monitoring
+end note
+
+@enduml

@@ -1,0 +1,103 @@
+@startuml MementoPatternComponents
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentBackgroundColor #E8F4FD
+skinparam interfaceBackgroundColor #FFF2CC
+skinparam databaseBackgroundColor #D5E8D4
+
+title Memento Pattern - React Component Integration
+
+package "UI Layer" {
+    component [AddNewAnime\nComponent] as AddNewAnime
+    component [DraftManager\nModal] as DraftManager
+    component [AnimeInformation\nComponent] as AnimeInfo
+    component [AnimeEpisodeInformation\nComponent] as EpisodeInfo
+}
+
+package "Hook Layer" {
+    interface "useDraftManager" as Hook {
+        saveDraft()
+        loadDraft()
+        getAllDrafts()
+        updateFormState()
+        enableAutoSave()
+        hasUnsavedChanges()
+    }
+}
+
+package "Business Logic" {
+    component [AnimeFormOriginator] as Originator
+    component [AnimeFormCaretaker] as Caretaker
+    component [AnimeFormMemento] as Memento
+}
+
+package "Utilities" {
+    component [draftSystemUtils] as Utils {
+        validateDraftData()
+        repairDraftSystem()
+        emergencyReset()
+    }
+}
+
+package "Storage Layer" {
+    database "localStorage" as Storage {
+        anime_form_drafts: JSON
+    }
+}
+
+package "Types & Interfaces" {
+    interface "AnimeFormState" as State
+    interface "FormSetters" as Setters
+}
+
+' UI connections
+AddNewAnime --> Hook : uses
+DraftManager --> Hook : uses
+AddNewAnime --> AnimeInfo : renders
+AddNewAnime --> EpisodeInfo : renders
+AddNewAnime --> DraftManager : renders
+
+' Hook connections
+Hook --> Originator : manages
+Hook --> Caretaker : manages
+Hook --> Setters : uses
+
+' Business logic connections
+Originator --> Memento : creates
+Caretaker --> Memento : stores
+Memento --> State : encapsulates
+
+' Storage connections
+Caretaker --> Storage : persists
+Utils --> Storage : repairs
+
+' Data flow
+AddNewAnime ..> State : form data
+Hook ..> State : state updates
+Storage ..> State : serialized data
+
+note right of Hook
+**Hook Responsibilities:**
+• Bridge UI and pattern
+• Auto-save management
+• Error handling
+• State synchronization
+end note
+
+note bottom of Storage
+**Persistence Strategy:**
+• JSON serialization
+• Automatic cleanup
+• Error recovery
+• Data validation
+end note
+
+note left of Utils
+**Utility Functions:**
+• Data validation
+• System repair
+• Debug tools
+• Emergency reset
+end note
+
+@enduml

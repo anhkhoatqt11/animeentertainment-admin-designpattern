@@ -1,0 +1,68 @@
+@startuml ProxyPatternCacheFlow
+!theme superhero
+
+title Proxy Design Pattern - Cache Flow and States
+
+state "Image Request" as request
+state "Cache Check" as cache_check
+state "Cache Hit" as cache_hit
+state "Cache Miss" as cache_miss
+state "Create RealImage" as create_real
+state "Load Image" as load_image
+state "Store in Cache" as store_cache
+state "Return Image" as return_image
+state "Error State" as error_state
+
+[*] --> request : User requests image
+
+request --> cache_check : Check if image exists in cache
+
+cache_check --> cache_hit : Image found in cache
+cache_check --> cache_miss : Image not in cache
+
+cache_hit --> return_image : Return cached image instantly
+cache_hit : **Benefits:**\n• Instant load\n• No network request\n• Memory efficient
+
+cache_miss --> create_real : Lazy initialization
+cache_miss : **Proxy creates RealImage**\n• Only when needed\n• Resource optimization
+
+create_real --> load_image : Start async loading
+create_real : **RealImage Creation:**\n• Browser Image() element\n• Promise-based loading\n• Error handling setup
+
+load_image --> store_cache : Success: Image loaded
+load_image --> error_state : Error: Loading failed
+
+load_image : **Loading Process:**\n• Network request\n• Browser cache check\n• Image validation\n• Promise resolution
+
+store_cache --> return_image : Cache updated
+store_cache : **Cache Storage:**\n• Map<url, RealImage>\n• Static cache shared\n• Memory management
+
+error_state --> return_image : Fallback image
+error_state : **Error Handling:**\n• Retry mechanism\n• Fallback images\n• Error callbacks
+
+return_image --> [*] : Image displayed
+
+note right of cache_hit
+    **Cache Benefits:**
+    • Instant loading
+    • Reduced bandwidth
+    • Better UX
+    • Offline capability
+end note
+
+note left of create_real
+    **Lazy Initialization:**
+    • Memory efficient
+    • Create only when needed
+    • Deferred resource allocation
+end note
+
+note bottom of store_cache
+    **Cache Strategy:**
+    • Persistent across components
+    • Shared memory space
+    • LRU potential
+    • Size management
+end note
+
+@enduml

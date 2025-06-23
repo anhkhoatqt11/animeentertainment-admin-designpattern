@@ -1,0 +1,126 @@
+@startuml ProxyPatternComponentStructure
+!theme aws-orange
+
+title Proxy Design Pattern - React Component Structure
+
+package "Core Pattern" {
+    interface ImageInterface {
+        +load(): Promise<string>
+        +getUrl(): string
+        +isLoaded(): boolean
+    }
+    
+    class RealImage implements ImageInterface {
+        -url: string
+        -loaded: boolean
+        -loadPromise: Promise<string>
+    }
+    
+    class ImageProxy implements ImageInterface {
+        -realImage: RealImage
+        -url: string
+        -static cache: Map<string, RealImage>
+    }
+}
+
+package "React Integration" {
+    class useImageProxy {
+        +state: ImageLoadingState
+        +loadImage(): Promise<void>
+        +retryLoad(): Promise<void>
+        -imageProxyRef: ImageInterface
+        -mountedRef: boolean
+    }
+    
+    class ProxyImage {
+        +props: ProxyImageProps
+        +render(): JSX.Element
+        -useIntersectionObserver()
+        -handleRetry()
+    }
+}
+
+package "Cache Management" {
+    class ImageCacheManager {
+        +preloadImages(urls: string[]): Promise<void>
+        +getCacheStats(): CacheStats
+        +clearCache(): void
+        +preloadPageImages(items: any[]): Promise<void>
+        +preloadNextPageImages(): Promise<void>
+    }
+}
+
+package "Application Components" {
+    class AnimeList {
+        -currentPage: number
+        -imageLoadingStats: object
+        +onPageChange(page: number): void
+        +preloadImages(): void
+    }
+    
+    class AnimeItemCard {
+        -item: AnimeItem
+        +render(): JSX.Element
+    }
+    
+    class ProxyPatternDemo {
+        +demonstratePattern(): JSX.Element
+        +showCacheStats(): void
+        +manageCacheOperations(): void
+    }
+}
+
+' Relationships
+useImageProxy --> ImageProxy : creates & manages
+ProxyImage --> useImageProxy : uses hook
+AnimeItemCard --> ProxyImage : renders image
+AnimeList --> AnimeItemCard : contains multiple
+AnimeList --> ImageCacheManager : preloads images
+ImageCacheManager --> ImageProxy : manages cache
+ImageProxy --> RealImage : lazy creates
+ProxyPatternDemo --> ProxyImage : demonstrates
+ProxyPatternDemo --> ImageCacheManager : shows management
+
+' Dependencies
+ImageProxy::cache ..> RealImage : stores instances
+useImageProxy::imageProxyRef ..> ImageProxy : references
+
+note top of ImageInterface
+    **Subject Interface**
+    Defines contract for 
+    image loading operations
+end note
+
+note right of ImageProxy
+    **Proxy Implementation**
+    • Lazy initialization
+    • Caching strategy
+    • Access control
+    • Performance optimization
+end note
+
+note left of RealImage
+    **Real Subject**
+    • Actual image loading
+    • Browser Image API
+    • Promise-based loading
+    • Error handling
+end note
+
+note bottom of useImageProxy
+    **React Hook Layer**
+    • State management
+    • Lifecycle handling
+    • Error boundaries
+    • Component integration
+end note
+
+note bottom of ImageCacheManager
+    **High-level Cache Operations**
+    • Preloading strategies
+    • Cache statistics
+    • Memory management
+    • Performance monitoring
+end note
+
+@enduml
